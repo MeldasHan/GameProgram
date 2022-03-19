@@ -50,12 +50,16 @@ var train = new THREE.Group();
 var cubeGeometry = new THREE.BoxGeometry(3,1,2);
 var cubeMaterial = new THREE.MeshNormalMaterial();
 cube = new THREE.Mesh (cubeGeometry,cubeMaterial);
+cube2 = new THREE.Mesh (cubeGeometry,cubeMaterial);
+cube3 = new THREE.Mesh (cubeGeometry,cubeMaterial);
+cube4 = new THREE.Mesh (cubeGeometry,cubeMaterial);
 
 chimney = new THREE.Mesh(new THREE.CylinderGeometry(0.5,0.5,2,20),new THREE.MeshNormalMaterial());
-train.add (cube,chimney);
-cube.position=0.5;
-chimney.position.y=1;
-chimney.position.x=8;
+chimney2 = new THREE.Mesh(new THREE.CylinderGeometry(0.5,0.5,2,20),new THREE.MeshNormalMaterial());
+chimney3 = new THREE.Mesh(new THREE.CylinderGeometry(0.5,0.5,2,20),new THREE.MeshNormalMaterial());
+chimney4 = new THREE.Mesh(new THREE.CylinderGeometry(0.5,0.5,2,20),new THREE.MeshNormalMaterial());
+train.add (cube,cube2,cube3,cube4,chimney,chimney2,chimney3,chimney4);
+
 
 return train;
 }
@@ -87,6 +91,8 @@ function init () {
   scene.add (train);
   Track = makeTrack();
   scene.add (Track);
+  Track2 = makeTrack2();
+  scene.add (Track2);
 }
 
 function makeTrack(){
@@ -95,6 +101,17 @@ var theta = 0;
 for (var i=0;i<100;i++){
 	theta = i*Math.PI*2/100;
   var point = new THREE.Vector3(8*Math.cos(theta),0,8*Math.sin(theta));
+  points.push(point);}
+var geom = new THREE.BufferGeometry ().setFromPoints(points);
+var line = new THREE.Line(geom,new THREE.LineBasicMaterial({color:0xff0000}));
+return line;
+}
+function makeTrack2(){
+var points = [];
+var theta = 0;
+for (var i=0;i<100;i++){
+	theta = i*Math.PI*2/100;
+  var point = new THREE.Vector3(10*Math.cos(theta),0,10*Math.sin(theta));
   points.push(point);}
 var geom = new THREE.BufferGeometry ().setFromPoints(points);
 var line = new THREE.Line(geom,new THREE.LineBasicMaterial({color:0xff0000}));
@@ -113,9 +130,22 @@ function animate() {
 
 	var dt= clock.getDelta();
 	if(turn)angle += 2*Math.PI/30*dt;
-  cube.position.set (8*Math.cos(angle),0.5,-8*Math.sin(angle))
+  cube.position.set (9*Math.cos(angle),0.5,-9*Math.sin(angle))
   cube.rotation.y = angle+1.5*Math.PI;
-  chimney.position.set (8*Math.cos(angle),1,-8*Math.sin(angle))
+  
+  cube2.position.set (-9*Math.cos(angle),0.5,9*Math.sin(angle))
+  cube2.rotation.y = angle+1.5*Math.PI;
+  
+  cube3.position.set (9*Math.cos(angle+0.5*Math.PI),0.5,-9*Math.sin(angle+0.5*Math.PI))
+  cube3.rotation.y = angle-1*Math.PI;
+  
+  cube4.position.set (-9*Math.cos(angle+0.5*Math.PI),0.5,9*Math.sin(angle+0.5*Math.PI))
+  cube4.rotation.y = angle+1*Math.PI;
+  
+  chimney.position.set (9*Math.cos(angle),1,-9*Math.sin(angle))
+  chimney2.position.set (-9*Math.cos(angle),1,9*Math.sin(angle))
+  chimney3.position.set (9*Math.cos(angle+0.5*Math.PI),1,-9*Math.sin(angle+0.5*Math.PI))
+  chimney4.position.set (-9*Math.cos(angle+0.5*Math.PI),1,9*Math.sin(angle+0.5*Math.PI))
 	requestAnimationFrame(animate);
 	render();
 	
