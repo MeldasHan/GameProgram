@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+#info{
+  position:absolute;
+  top:10px;
+  width:100%;
+  padding:5px;
+  text-align:center;
+  font-size:20px;
+  color:#ffff00;
+}
+  body{
+    overflow: hidden
+  }
+</style>
+</head>
+
+<body>
+<audio id="hit" style="display:none">
+<source src="./hit.wav" type='audio/wav'>
+</audio>
+
+<div id='info'> Game in Three.JS <br>
+<button id="toggle" style="width:20%">Toggle Turn </button>
+</div>
+<script src="https://threejs.org/build/three.min.js"></script>
+<script src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
+<script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+
+
+<script>
+var camera, scene, renderer;
+var hit;
+var NPUFFS = 40;
+var R = 10,temp=0;
+var box1, box2, box3, box4, box5;
+var pos , vel , force;
+var dt1 = 0.05;
+var dt2 = 0.1;
+var dt3 = 0.15;
+var dt4 = 0.2;
+var dt5 = 0.25;
+var walls = [];
+var CyclinderGroups = [];
+
+(function(){Math.clamp=function(a,b,c){return Math.max(b,Math.min(c,a));}})();
+
+class Cyclinder
+{
+	constructor(r,posx,posz,bc)
+  {
+		this.which = 0;
+		this.groups = new THREE.Group();
+		var geometry = new THREE.CylinderGeometry(r,r,r,20);
+		var material = new THREE.MeshPhongMaterial({color: bc,shininess: 200,})
+		var mesh = new THREE.Mesh(geometry,material);
+		var light = new THREE.PointLight( bc,1,100 );
+		mesh.position.y = 0;
+		light.position.y = 20;
+		this.groups.add(mesh,light);
+		this.groups.position.set(posx,0,posz);
+		scene.add(this.groups);
+    
+		this.puffs = [];
+		for (let k = 0; k < NPUFFS; k++) {
+			var puff = new THREE.Mesh(new THREE.SphereGeometry(3, 20, 20),
+			new THREE.MeshBasicMaterial({
+				transparent: true,
+				color: bc
+			}));
+			this.puffs.push(puff);
+			puff.position.copy (mesh);
+			scene.add(puff);		
+		}
+	}	
+}
+
+class Wall
+{
+	constructor()
+	{
+  	var geometry = new THREE.BoxGeometry(210,20,10);
+  	var material = new THREE.MeshPhongMaterial({color: 0x8E8E8E,shininess: 200,transparent:true,opacity:0.5})
+  	var mesh = new THREE.Mesh(geometry,material);
+	return mesh;
+	}
+}
+
+init();
+animate();
+
+function makepos(pos,vel)
+{
+  if (pos.z < -90)
+  {
+  	 vel.z = - vel.z;
+     
+     pos.z = -90;
+	 hit.play();
+  }
+  if (pos.z > 90)
+  {
+  	 vel.z = - vel.z;
+     
+     pos.z = 90;
+	 hit.play();
+  }
+  if (pos.x > 90)
+  {
+  	 vel.x = - vel.x;
+     
+     pos.x = 90;
+	 hit.play();
+  }
+  if (pos.x < -90) 
+  {
+  	 vel.x = - vel.x;
+     
+     pos.x = -90;
+	 hit.play();
+  }
+}
+
+function fixpos (pos,vel,pos2,vel2)
+{
+	if(vel.x>0 && vel2.x>0)
+  {
+  	temp=vel.x;
+    vel.x=vel2.x;
+    vel2.x=temp;
+    if(Math.sqrt((pos.x-pos2.x)*(pos.x-pos2.x)+(pos.z-pos2.z)*(pos.z-pos2.z))<2*R)
+    {
+    	if(pos.x>pos2.x)
+      {
+      	if(pos.x<90)
+        {
+        	pos.x=pos.x+vel.x;
+			hit.play();
+        }
+        else
+        {
+        	pos2.x=pos2.x-vel2.x;
+			hit.play();
+        }
+      }
+      else
+      {
+      	if(pos.x>-90)
+        {
+        	pos2.x=pos2.x+vel2.x;
+			hit.play();
+        }
+        else
+        {
+        	pos.x=pos.x-vel.x;
+			hit.play();
+        }
+      }
+    }
+  }
+  else if(vel.x<0 && vel2.x<0)
+  {
+  	temp=vel.x;
+    vel.x=vel2.x;
+    vel2.x=temp;
+    if(Math.sqrt((pos.x-pos2.x)*(pos.x-pos2.x)+(pos.z-pos2.z)*(pos.z-pos2.z))<2*R)
+    {
+    	if(pos.x>pos2.x)
+      {
+      	if(pos.x<90)
+        {
+        	pos.x=pos.x-vel.x;
+			hit.play();
+        }
+        else
+        {
+        	pos2.x=pos2.x+vel2.x;
+			hit.play();
+        }
+      }
+      else
+      {
+      	if(pos.x>-90)
+        {
+        	pos2.x=pos2.x-vel2.x;
+			hit.play();
+        }
+        else
+        {
+        	pos.x=pos.x+vel.x;
+			hit.play();
+        }
+      }
+    }
+  }
+  else if(vel.x<0 && vel2.x>0)
+  {
+	vel.x = -vel.x;
+  vel2.x = -vel2.x;
+  if(Math.sqrt((pos.x-pos2.x)*(pos.x-pos2.x)+(pos.z-pos2.z)*(pos.z-pos2.z))<2*R)
+    {
+    	if(pos.x>pos2.x)
+      {
+      	if(pos.x<90)
+        {
+        	pos.x=pos.x+vel.x;
+			hit.play();
+        }
+        else
+        {
+        	pos2.x=pos2.x-vel2.x;
+			hit.play();
+        }
+      }
+      else
+      {
+      	if(pos.x>-90)
+        {
+        	pos2.x=pos2.x-vel2.x;
+			hit.play();
+        }
+        else
+        {
+        	pos.x=pos.x+vel.x;
+			hit.play();
+        }
+      }
+    }
+  }
+	else if(vel.x>0 && vel2.x<0)
+  {
+	vel.x = -vel.x;
+  vel2.x = -vel2.x;
+  if(Math.sqrt((pos.x-pos2.x)*(pos.x-pos2.x)+(pos.z-pos2.z)*(pos.z-pos2.z))<2*R)
+    {
+    	if(pos.x>pos2.x)
+      {
+      	if(pos.x<90)
+        {
+        	pos.x=pos.x-vel.x;
+			hit.play();
+        }
+        else
+        {
+        	pos2.x=pos2.x+vel2.x;
+			hit.play();
+        }
+      }
+      else
+      {
+      	if(pos.x>-90)
+        {
+        	pos2.x=pos2.x+vel2.x;
+			hit.play();
+        }
+        else
+        {
+        	pos.x=pos.x-vel.x;
+			hit.play();
+        }
+      }
+    }
+  }
+  
+  if(vel.z>0 && vel2.z>0)
+  {
+  	temp=vel.z;
+    vel.z=vel2.z;
+    vel2.z=temp;
+    if(Math.sqrt((pos.x-pos2.x)*(pos.x-pos2.x)+(pos.z-pos2.z)*(pos.z-pos2.z))<2*R)
+    {
+    	if(pos.z>pos2.z)
+      {
+      	if(pos.z<90)
+        {
+        	pos.z=pos.z+vel.z;
+			hit.play();
+        }
+        else
+        {
+        	pos2.z=pos2.z-vel2.z;
+			hit.play();
+        }
+      }
+      else
+      {
+      	if(pos.z>-90)
+        {
+        	pos2.z=pos2.z+vel2.z;
+			hit.play();
+        }
+        else
+        {
+        	pos.z=pos.z-vel.z;
+			hit.play();
+        }
+      }
+    }
+  }
+  else if(vel.z<0 && vel2.z<0)
+  {
+  	temp=vel.z;
+    vel.z=vel2.z;
+    vel2.z=temp;
+    if(Math.sqrt((pos.x-pos2.x)*(pos.x-pos2.x)+(pos.z-pos2.z)*(pos.z-pos2.z))<2*R)
+    {
+    	if(pos.z>pos2.z)
+      {
+      	if(pos.z<90)
+        {
+        	pos.z=pos.z-vel.z;
+			hit.play();
+        }
+        else
+        {
+        	pos2.z=pos2.z+vel2.z;
+			hit.play();
+        }
+      }
+      else
+      {
+      	if(pos.z>-90)
+        {
+        	pos2.z=pos2.z-vel2.z;
+			hit.play();
+        }
+        else
+        {
+        	pos.z=pos.z+vel.z;
+			hit.play();
+        }
+      }
+    }
+  }
+  else if(vel.z<0 && vel2.z>0)
+  {
+  vel.z = -vel.z;
+  vel2.z = -vel2.z;
+  if(Math.sqrt((pos.x-pos2.x)*(pos.x-pos2.x)+(pos.z-pos2.z)*(pos.z-pos2.z))<2*R)
+    {
+    	if(pos.z>pos2.z)
+      {
+      	if(pos.z<90)
+        {
+        	pos.z=pos.z+vel.z;
+			hit.play();
+        }
+        else
+        {
+        	pos2.z=pos2.z-vel2.z;
+			hit.play();
+        }
+      }
+      else
+      {
+      	if(pos.z>-90)
+        {
+        	pos2.z=pos2.z-vel2.z;
+			hit.play();
+        }
+        else
+        {
+        	pos.z=pos.z+vel.z;
+			hit.play();
+        }
+      }
+    }
+  }
+  else if(vel.z>0 && vel2.z<0)
+  {
+  vel.z = -vel.z;
+  vel2.z = -vel2.z;
+  if(Math.sqrt((pos.x-pos2.x)*(pos.x-pos2.x)+(pos.z-pos2.z)*(pos.z-pos2.z))<2*R)
+    {
+    	if(pos.z>pos2.z)
+      {
+      	if(pos.z<90)
+        {
+        	pos.z=pos.z+vel.z;
+			hit.play();
+        }
+        else
+        {
+        	pos2.z=pos2.z-vel2.z;
+			hit.play();
+        }
+      }
+      else
+      {
+      	if(pos.z>-90)
+        {
+        	pos2.z=pos2.z-vel2.z;
+			hit.play();
+        }
+        else
+        {
+        	pos.z=pos.z+vel.z;
+			hit.play();
+        }
+      }
+    }
+  }
+}  
+
+function init() {
+  walls = new THREE.Group();
+  scene = new THREE.Scene();
+
+  hit = document.getElementById('hit');
+  hit.volume = 0.1;
+  
+  renderer = new THREE.WebGLRenderer();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setClearColor(0x888888);
+  document.body.appendChild(renderer.domElement);
+
+  camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 1, 1000);
+  camera.position.set (0,250,100);
+  let controls = new THREE.OrbitControls(camera, renderer.domElement);
+  window.addEventListener('resize', onWindowResize , false);
+  ///////////////////////////////////////////////////////////////
+  var floor = new THREE.Mesh (new THREE.PlaneGeometry(200,200), new THREE.MeshPhongMaterial({side:THREE.DoubleSide}));
+  floor.position.set (0,5,0);
+  floor.rotation.x = -Math.PI/2;
+  scene.add (floor);
+  
+  box1 = new Cyclinder(R,0,0,0xff0000);
+  box2 = new Cyclinder(R,50,0,0x00ffff);
+  box3 = new Cyclinder(R,-50,0,0x00bb00);
+  box4 = new Cyclinder(R,0,50,0xB15BFF);
+  box5 = new Cyclinder(R,0,-50,0xFFFF37);
+  
+  CyclinderGroups.push(box1,box2,box3,box4,box5);
+  
+  var wall1 = new Wall ();
+  wall1.position.set (0,10,105);
+  
+  var wall2 = new Wall ();
+  wall2.position.set (105,10,0);
+  wall2.rotation.y = -Math.PI/2;
+  
+  var wall3 = new Wall ();
+  wall3.position.set (0,10,-105);
+  
+  var wall4 = new Wall ();
+  wall4.position.set (-105,10,0);
+  wall4.rotation.y = -Math.PI/2;
+  
+  pos = new THREE.Vector3(0,10,0);
+  vel = new THREE.Vector3(4,0,2);
+  force = new THREE.Vector3(0,0,0);
+  
+  pos2 = new THREE.Vector3(-50,10,0);
+  vel2 = new THREE.Vector3(2,0,4);
+  
+  pos3 = new THREE.Vector3(50,10,0);
+  vel3 = new THREE.Vector3(5,0,-1);
+  
+  pos4 = new THREE.Vector3(0,10,50);
+  vel4 = new THREE.Vector3(1,0,-3);
+  
+  pos5 = new THREE.Vector3(0,10,-50);
+  vel5 = new THREE.Vector3(3,0,-5);
+  
+  scene.add (box1, box2, box3, box4, box5, wall1, wall2, wall3, wall4);
+  
+  
+  
+}
+
+function animate() {
+
+  requestAnimationFrame(animate);
+  render();
+  
+  vel.add(force.clone().multiplyScalar (dt1));
+  pos.add(vel.clone().multiplyScalar (dt1));
+  
+  vel2.add(force.clone().multiplyScalar (dt2));
+  pos2.add(vel2.clone().multiplyScalar (dt2));
+  
+  vel3.add(force.clone().multiplyScalar (dt3));
+  pos3.add(vel3.clone().multiplyScalar (dt3));
+  
+  vel4.add(force.clone().multiplyScalar (dt4));
+  pos4.add(vel4.clone().multiplyScalar (dt4));
+  
+  vel5.add(force.clone().multiplyScalar (dt5));
+  pos5.add(vel5.clone().multiplyScalar (dt5));
+  
+  
+  makepos(pos,vel);
+  makepos(pos2,vel2);
+  makepos(pos3,vel3);
+  makepos(pos4,vel4);
+  makepos(pos5,vel5);
+
+  box1.groups.position.copy (pos);
+  box2.groups.position.copy (pos2);
+  box3.groups.position.copy (pos3);
+  box4.groups.position.copy (pos4);
+  box5.groups.position.copy (pos5);
+  
+  if(Math.sqrt((pos.x-pos2.x)*(pos.x-pos2.x)+(pos.z-pos2.z)*(pos.z-pos2.z))<=2*R)
+  {
+  	temp = dt1;
+    dt1=dt2;
+    dt2=temp;
+    fixpos(pos,vel,pos2,vel2);
+  }
+  if(Math.sqrt((pos.x-pos3.x)*(pos.x-pos3.x)+(pos.z-pos3.z)*(pos.z-pos3.z))<=2*R)
+  {
+  	temp = dt1;
+    dt1=dt3;
+    dt3=temp;
+    fixpos(pos,vel,pos3,vel3);
+  }
+  if(Math.sqrt((pos.x-pos4.x)*(pos.x-pos4.x)+(pos.z-pos4.z)*(pos.z-pos4.z))<=2*R)
+  {
+  	temp = dt1;
+    dt1=dt4;
+    dt4=temp;
+    fixpos(pos,vel,pos4,vel4);
+  }
+  if(Math.sqrt((pos.x-pos5.x)*(pos.x-pos5.x)+(pos.z-pos5.z)*(pos.z-pos5.z))<=2*R)
+  {
+  	temp = dt1;
+    dt1=dt5;
+    dt5=temp;
+    fixpos(pos,vel,pos5,vel5);
+  }
+  if(Math.sqrt((pos2.x-pos3.x)*(pos2.x-pos3.x)+(pos2.z-pos3.z)*(pos2.z-pos3.z))<=2*R)
+  {
+  	temp = dt2;
+    dt2=dt3;
+    dt3=temp;
+    fixpos(pos2,vel2,pos3,vel3);
+  }
+  if(Math.sqrt((pos2.x-pos4.x)*(pos2.x-pos4.x)+(pos2.z-pos4.z)*(pos2.z-pos4.z))<=2*R)
+  {
+  	temp = dt2;
+    dt2=dt4;
+    dt4=temp;
+    fixpos(pos2,vel2,pos4,vel4);
+  }
+  if(Math.sqrt((pos2.x-pos5.x)*(pos2.x-pos5.x)+(pos2.z-pos5.z)*(pos2.z-pos5.z))<=2*R)
+  {
+  	temp = dt2;
+    dt2=dt5;
+    dt5=temp;
+    fixpos(pos2,vel2,pos5,vel5);
+  }
+  if(Math.sqrt((pos3.x-pos4.x)*(pos3.x-pos4.x)+(pos3.z-pos4.z)*(pos3.z-pos4.z))<=2*R)
+  {
+  	temp = dt3;
+    dt3=dt4;
+    dt4=temp;
+    fixpos(pos3,vel3,pos4,vel4);
+  }
+  if(Math.sqrt((pos3.x-pos5.x)*(pos3.x-pos5.x)+(pos3.z-pos5.z)*(pos3.z-pos5.z))<=2*R)
+  {
+  	temp = dt3;
+    dt3=dt5;
+    dt5=temp;
+    fixpos(pos3,vel3,pos5,vel5);
+  }
+  if(Math.sqrt((pos4.x-pos5.x)*(pos4.x-pos5.x)+(pos4.z-pos5.z)*(pos4.z-pos5.z))<=2*R)
+  {
+  	temp = dt4;
+    dt4=dt5;
+    dt5=temp;
+    fixpos(pos4,vel4,pos5,vel5);
+  }
+}
+
+function render() {
+
+  renderer.render(scene, camera);
+
+}
+function onWindowResize(){
+	camera.aspect = window.innerWidth/window.innerHeight;
+	camera.updateProjectionMatrix();
+	renderer.setSize(window.innerWidth,window.innerHeight);
+}
+</script>
+</body>
+
+</html>
