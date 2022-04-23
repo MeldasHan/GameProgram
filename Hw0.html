@@ -53,12 +53,14 @@ cube = new THREE.Mesh (cubeGeometry,cubeMaterial);
 cube2 = new THREE.Mesh (cubeGeometry,cubeMaterial);
 cube3 = new THREE.Mesh (cubeGeometry,cubeMaterial);
 cube4 = new THREE.Mesh (cubeGeometry,cubeMaterial);
+cube5 = new THREE.Mesh (cubeGeometry,cubeMaterial);
 
 chimney = new THREE.Mesh(new THREE.CylinderGeometry(0.5,0.5,2,20),new THREE.MeshNormalMaterial());
 chimney2 = new THREE.Mesh(new THREE.CylinderGeometry(0.5,0.5,2,20),new THREE.MeshNormalMaterial());
 chimney3 = new THREE.Mesh(new THREE.CylinderGeometry(0.5,0.5,2,20),new THREE.MeshNormalMaterial());
 chimney4 = new THREE.Mesh(new THREE.CylinderGeometry(0.5,0.5,2,20),new THREE.MeshNormalMaterial());
-train.add (cube,cube2,cube3,cube4,chimney,chimney2,chimney3,chimney4);
+chimney5 = new THREE.Mesh(new THREE.CylinderGeometry(0.5,0.5,2,20),new THREE.MeshNormalMaterial());
+train.add (cube,cube2,cube3,cube4,chimney,chimney2,chimney3,chimney4,cube5);
 
 
 return train;
@@ -89,6 +91,7 @@ function init () {
   window.addEventListener('resize', onWindowResize,false);
   train = makeTrain();
   scene.add (train);
+  cube5.rotation.y = 0;
   Track = makeTrack();
   scene.add (Track);
   Track2 = makeTrack2();
